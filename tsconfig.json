@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "rootDir": "./",
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@configs/*": [
+        "./src/configs/*"
+      ],
+      "@utils": [
+        "./src/utils"
+      ],
+      "@utils/*": [
+        "./src/utils/*"
+      ],
+      "@common-types": [
+        "./src/types"
+      ],
+      "@event-manager/*": [
+        "src/worker/*"
+      ],
+      "@event-manager": [
+        "src/worker"
+      ],
+      "@stream/*": [
+        "src/stream/*"
+      ],
+      "@stream": [
+        "src/stream"
+      ]
+    },
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": [
+      "@types/node",
+      "jest"
+    ]
+  }
+}
