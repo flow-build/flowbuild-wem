@@ -9,7 +9,7 @@ class Requester {
   async getToken() {
     const cachedToken = await in_memory_cache.get('FS_TOKEN')
     if (!cachedToken) {
-      const data = await axios({
+      const { data } = await axios({
         url: `${envs.FLOWBUILD_SERVER_URL}/token`,
         headers: {
           'x-duration': envs.FS_TOKEN_EXPIRE,

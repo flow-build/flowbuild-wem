@@ -1,6 +1,6 @@
 import { StreamInterface } from '@stream'
 import { createLogger } from '@utils'
-import { EventManager } from '@/worker'
+import { EventManager } from '@event-manager'
 import { envs } from '@configs/env'
 // import { publishPrompt } from '.@utils'
 
