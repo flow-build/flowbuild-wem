@@ -1,22 +1,3 @@
-jest.mock('@redis', () => {
-  const redisMap = {}
-  return {
-    RedisClient: class RedisClient {
-      get(key) {
-        return redisMap[key]
-      }
-      set(key, value, opts) {
-        redisMap[key] = value
-        return 1
-      }
-    }
-  }
-})
-
-jest.mock('redis', () => {
-  return {}
-})
-
 jest.mock('kafkajs', () => {
   return {}
 })
@@ -28,9 +9,27 @@ jest.mock('bullmq', () => {
   }
 })
 
+const axiosMock = jest.fn(({ url }) => {
+  if (url.includes('/token')) {
+    return { data: { jwtToken: 'testToken' } }
+  }
+  return {
+    data: {
+      process_id: 'TEST_PROCESS_ID'
+    }
+  }
+})
+jest.mock('axios', () => {
+  return axiosMock
+})
+
 jest.mock('@utils/logger', () => {
   return {
     createLogger: () => { return },
     log: () => { return }
   }
 })
+
+module.exports = {
+  axiosMock
+}
