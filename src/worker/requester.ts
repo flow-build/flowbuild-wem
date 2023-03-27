@@ -11,6 +11,7 @@ class Requester {
     if (!cachedToken) {
       const { data } = await axios({
         url: `${envs.FLOWBUILD_SERVER_URL}/token`,
+        method: 'POST',
         headers: {
           'x-duration': envs.FS_TOKEN_EXPIRE,
         },
@@ -27,15 +28,18 @@ class Requester {
     url,
     body,
     headers,
+    method,
   }: {
     url: string
     body: LooseObject
-    headers: LooseObject
+    headers?: LooseObject
+    method?: string
   }) {
     const { data } = await axios({
       url,
       data: body,
       headers: headers,
+      method,
     })
     return data
   }
@@ -44,19 +48,22 @@ class Requester {
     url,
     body,
     headers,
+    method,
   }: {
     url: string
     body: LooseObject
     headers?: LooseObject
+    method?: string
   }) {
     const token = await this.getToken()
 
     return await this.makeRequest({
       url,
       body,
+      method,
       headers: {
         ...headers,
-        authentication: `Bearer ${token}`,
+        authorization: `Bearer ${token}`,
       },
     })
   }

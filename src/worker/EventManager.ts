@@ -36,13 +36,18 @@ class EventManager {
 
   async startFSProcess(input: LooseObject) {
     const { process_name, process_input } = input
-    await this.requester.makeAuthenticatedRequest({
+    const processData = await this.requester.makeAuthenticatedRequest({
       url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${process_name}/start`,
+      method: 'POST',
       body: process_input,
     })
+    console.info('PROCESS CREATION RESPONSE => ', processData)
+    return processData
   }
 
   async runAction(topic: string, inputMessage: LooseObject) {
+    console.info('inputMessage at EM: ', inputMessage)
+
     if (topic === 'wem-start-process') {
       this.startFSProcess(inputMessage)
     }
