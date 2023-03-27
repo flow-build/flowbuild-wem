@@ -1,4 +1,7 @@
 const envs = {
+  FLOWBUILD_SERVER_URL:
+    process.env.FLOWBUILD_SERVER_URL || 'http://localhost:3000',
+  FS_TOKEN_EXPIRE: parseInt(process.env.FS_TOKEN_TTL || '300', 10),
   STREAM_CONFIG: JSON.parse(
     process.env.STREAM_CONFIG ||
       `

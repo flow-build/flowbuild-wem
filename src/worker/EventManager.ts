@@ -1,6 +1,7 @@
 import { StreamInterface } from '@stream'
-import { NodeResultMessage } from '@/stream/types'
-// import { LooseObject } from '@common-types'
+import { Requester } from './requester'
+import { envs } from '@/configs/env'
+import { LooseObject } from '@common-types'
 
 class EventManager {
   static _instance: EventManager
@@ -22,7 +23,10 @@ class EventManager {
     EventManager._stream = producer
   }
 
+  private requester: Requester
+
   constructor() {
+    this.requester = new Requester()
     if (EventManager.instance) {
       return EventManager.instance
     }
@@ -30,8 +34,18 @@ class EventManager {
     return this
   }
 
-  async runAction(topic: string, inputMessage: NodeResultMessage) {
-    console.log(topic, ': ', inputMessage)
+  async startFSProcess(input: LooseObject) {
+    const { process_name, process_input } = input
+    await this.requester.makeAuthenticatedRequest({
+      url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${process_name}/start`,
+      body: process_input,
+    })
+  }
+
+  async runAction(topic: string, inputMessage: LooseObject) {
+    if (topic === 'wem-start-process') {
+      this.startFSProcess(inputMessage)
+    }
   }
 }
 
