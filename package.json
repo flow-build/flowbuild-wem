@@ -7,7 +7,7 @@
     "build": "tsc && tsc-alias -p tsconfig.json",
     "lint": "eslint . --ext .ts",
     "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts)\"",
-    "test": "echo 'No tests yet' | exit 0",
+    "test": "jest",
     "test:cov": "pnpm run test --coverage --forceExit",
     "test:badges": "pnpm run test:cov  && jest-coverage-badges",
     "start": "node -r tsconfig-paths/register ./dist/src/index",
