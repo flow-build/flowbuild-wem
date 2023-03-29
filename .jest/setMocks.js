@@ -9,13 +9,60 @@ jest.mock('bullmq', () => {
   }
 })
 
-const axiosMock = jest.fn(({ url }) => {
+const axiosMock = jest.fn(async ({ url }) => {
   if (url.includes('/token')) {
-    return { data: { jwtToken: 'testToken' } }
+    return { data: { jwtToken: 'TEST_TOKEN' } }
+  }
+  if (url.includes('/start')) {
+    return { data: { process_id: 'TEST_PROCESS_ID' } }
   }
   return {
     data: {
-      process_id: 'TEST_PROCESS_ID'
+      "workflow_id": "TEST_WORKFLOW_ID",
+      "name": "TEST BP",
+      "description": "blueprint for testing",
+      "blueprint_spec": {
+        "lanes": [
+          {
+            "id": "1",
+            "name": "the_only_lane",
+            "rule": [
+              "fn",
+              [
+                "&",
+                "args"
+              ],
+              true
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "START",
+            "name": "Start node",
+            "next": "END",
+            "type": "Start",
+            "category": "signal",
+            "lane_id": "1",
+            "parameters": {
+              "signal": "TEST_DEFINITION",
+              "input_schema": {}
+            }
+          },
+          {
+            "id": "END",
+            "name": "Finish node",
+            "next": null,
+            "type": "Finish",
+            "lane_id": "1"
+          }
+        ],
+        "prepare": [],
+        "environment": {},
+        "requirements": [
+          "core"
+        ]
+      }
     }
   }
 })
