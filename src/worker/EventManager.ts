@@ -72,8 +72,12 @@ class EventManager {
   async runAction(topic: string, inputMessage: LooseObject) {
     console.info('inputMessage at EM: ', inputMessage)
 
-    if (topic === 'wem-start-process') {
-      this.startFSProcess(inputMessage as StartProcessMessage)
+    try {
+      if (topic === 'wem-start-process') {
+        this.startFSProcess(inputMessage as StartProcessMessage)
+      }
+    } catch (e) {
+      console.error(e)
     }
   }
 }
