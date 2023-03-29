@@ -1,7 +1,7 @@
 import { StreamInterface } from '@stream'
 import { Requester } from './requester'
 import { envs } from '@/configs/env'
-import { LooseObject } from '@common-types'
+import { LooseObject, StartProcessMessage } from '@common-types'
 
 class EventManager {
   static _instance: EventManager
@@ -34,10 +34,10 @@ class EventManager {
     return this
   }
 
-  async startFSProcess(input: LooseObject) {
-    const { process_name, process_input } = input
+  async startFSProcess(input: StartProcessMessage) {
+    const { workflow_name, process_input } = input
     const processData = await this.requester.makeAuthenticatedRequest({
-      url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${process_name}/start`,
+      url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
       method: 'POST',
       body: process_input,
     })
@@ -49,7 +49,7 @@ class EventManager {
     console.info('inputMessage at EM: ', inputMessage)
 
     if (topic === 'wem-start-process') {
-      this.startFSProcess(inputMessage)
+      this.startFSProcess(inputMessage as StartProcessMessage)
     }
   }
 }

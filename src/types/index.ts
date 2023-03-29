@@ -1,4 +1,4 @@
-export * from './action.type'
+export * from './start_process.type'
 export * from './history.type'
 export * from './process_state.type'
 export * from './result.type'
