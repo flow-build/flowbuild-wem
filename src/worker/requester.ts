@@ -31,7 +31,7 @@ class Requester {
     method,
   }: {
     url: string
-    body: LooseObject
+    body?: LooseObject
     headers?: LooseObject
     method?: string
   }) {
@@ -51,7 +51,7 @@ class Requester {
     method,
   }: {
     url: string
-    body: LooseObject
+    body?: LooseObject
     headers?: LooseObject
     method?: string
   }) {
