@@ -1,4 +1,5 @@
 FROM node:18
+# FROM node:18-alpine
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -9,8 +10,7 @@ RUN npm install -g pnpm
 RUN npm install -g typescript
 RUN pnpm install
 RUN pnpm run build
-# If you are building your code for production
-# RUN npm ci --only=production
+# RUN pnpm install --prod
 
 ENV BROKER_HOST=$BROKER_HOST
 ENV REDIS_HOST=$REDIS_HOST
