@@ -59,7 +59,7 @@ let worker: EventManager
 
 beforeAll(async () => {
   createLogger('test')
-  worker = new EventManager()
+  worker = new EventManager({}, {})
   stream = new StreamInterface(envs.STREAM_CONFIG)
   EventManager.stream = stream
   await stream.connect(worker)
