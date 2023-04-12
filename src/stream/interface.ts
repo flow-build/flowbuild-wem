@@ -103,6 +103,15 @@ class StreamInterface {
     // }
   }
 
+  async subscribe(topics: Array<string>) {
+    for (const topic of topics) {
+      await this._consumer?.subscribe({
+        topic: topic,
+        fromBeginning: true,
+      })
+    }
+  }
+
   // Kafka consumer cb
   eachMessage(orchestrator: EventManager) {
     return async ({ topic, partition, message }: EachMessagePayload) => {
