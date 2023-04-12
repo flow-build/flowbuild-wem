@@ -6,6 +6,7 @@ import {
   ContinueProcessMessage,
   LooseObject,
   StartProcessMessage,
+  TopicCreationInput,
   TopicMap,
 } from '@common-types'
 
@@ -44,7 +45,7 @@ class EventManager {
     return this
   }
 
-  async connectToTopic(input: LooseObject) {
+  async connectToTopic(input: TopicCreationInput) {
     const {
       event: { definition },
     } = input
@@ -97,7 +98,7 @@ class EventManager {
       if (topic === 'wem-start-process') {
         this.startFSProcess(inputMessage as StartProcessMessage)
       } else if (topic === 'target-created') {
-        // this.connectToTopic(inputMessage)
+        this.connectToTopic(inputMessage as TopicCreationInput)
       } else {
         this.startProcessByTopic(topic, inputMessage as BaseMessage)
       }
