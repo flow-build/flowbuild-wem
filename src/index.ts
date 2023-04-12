@@ -6,15 +6,16 @@ import { envs } from '@configs/env'
 async function main() {
   createLogger('info')
 
-  const topics = await fetchTargetTopics()
+  const { topicConfig, startTopicMap, continueTopicMap } =
+    await fetchTargetTopics()
 
   let streamConfig = envs.STREAM_CONFIG
-  if (Object.keys(topics).length) {
-    streamConfig = { topics }
+  if (Object.keys(topicConfig).length) {
+    streamConfig = { topics: { ...topicConfig, ...envs.STREAM_CONFIG.topics } }
   }
 
   const streamInterface = new StreamInterface(streamConfig)
-  const eventManager = new EventManager()
+  const eventManager = new EventManager(startTopicMap, continueTopicMap)
 
   EventManager.stream = streamInterface
 
