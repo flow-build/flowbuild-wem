@@ -1,7 +1,13 @@
 import { StreamInterface } from '@stream'
 import { Requester } from './requester'
 import { envs } from '@/configs/env'
-import { LooseObject, StartProcessMessage } from '@common-types'
+import {
+  BaseMessage,
+  ContinueProcessMessage,
+  LooseObject,
+  StartProcessMessage,
+  TopicMap,
+} from '@common-types'
 
 class EventManager {
   static _instance: EventManager
@@ -24,14 +30,38 @@ class EventManager {
   }
 
   private requester: Requester
+  private startTopicMap: { [key: string]: TopicMap }
+  private continueTopicMap: { [key: string]: TopicMap }
 
-  constructor() {
+  constructor(startTopicMap: LooseObject, continueTopicMap: LooseObject) {
+    this.startTopicMap = startTopicMap
+    this.continueTopicMap = continueTopicMap
     this.requester = new Requester()
     if (EventManager.instance) {
       return EventManager.instance
     }
     EventManager.instance = this
     return this
+  }
+
+  async connectToTopic(input: LooseObject) {
+    const {
+      event: { definition },
+    } = input
+    await EventManager.stream.subscribe([definition])
+  }
+
+  async continueFSProcess(input: ContinueProcessMessage) {
+    const { process_id, process_input } = input
+    if (process_id) {
+      const processData = await this.requester.makeAuthenticatedRequest({
+        url: `${envs.FLOWBUILD_SERVER_URL}/processes/${process_id}/run`,
+        method: 'POST',
+        body: process_input,
+      })
+      console.info('PROCESS CREATION RESPONSE => ', processData)
+      return processData
+    }
   }
 
   async startFSProcess(input: StartProcessMessage) {
@@ -45,12 +75,31 @@ class EventManager {
     return processData
   }
 
+  async startProcessByTopic(topic: string, input: BaseMessage) {
+    const start = this.startTopicMap[topic]
+    if (start.workflow_name) {
+      this.startFSProcess({ ...input, workflow_name: start.workflow_name })
+    }
+
+    const _continue = this.continueTopicMap[topic]
+    if (_continue.workflow_name) {
+      this.continueFSProcess({
+        ...input,
+        workflow_name: _continue.workflow_name,
+      })
+    }
+  }
+
   async runAction(topic: string, inputMessage: LooseObject) {
     console.info('inputMessage at EM: ', inputMessage)
 
     try {
       if (topic === 'wem-start-process') {
         this.startFSProcess(inputMessage as StartProcessMessage)
+      } else if (topic === 'target-created') {
+        // this.connectToTopic(inputMessage)
+      } else {
+        this.startProcessByTopic(topic, inputMessage as BaseMessage)
       }
     } catch (e) {
       console.error(e)

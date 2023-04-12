@@ -17,49 +17,41 @@ async function fetchTargetTopics() {
     })
   )
 
-  const targets = detailedWorkflows.map((workflow: Workflow) => {
-    const {
-      blueprint_spec: { nodes },
-    } = workflow
-    return nodes.reduce(
-      (acc: LooseObject, node: Node) => {
+  return detailedWorkflows.reduce(
+    (acc: LooseObject, workflow: Workflow) => {
+      const {
+        blueprint_spec: { nodes },
+      } = workflow
+      nodes.forEach((node: Node) => {
         const events = node?.parameters?.events || []
         if (events.length) {
           const targetEvent = events.find(
             (e: LooseObject) => e.category === 'signal' && e.family === 'target'
           )
           if (targetEvent) {
-            if (node.type === 'start') {
-              acc.startEvents.push(targetEvent.definition)
-              return acc
+            const { definition } = targetEvent
+            acc.topicConfig[definition] = {
+              consumesFrom: [envs.STREAM_INTERFACE],
             }
-            acc.continueEvents.push(targetEvent.definition)
-            return acc
+            if (node.type === 'start') {
+              acc.startTopicMap[definition] = {
+                workflow_name: workflow.name,
+              }
+            }
+            acc.continueTopicMap[definition] = {
+              workflow_name: workflow.name,
+            }
           }
         }
-        return acc
-      },
-      {
-        startEvents: [],
-        continueEvents: [],
-      }
-    )
-  })
-  // Done like this in case it's necessary to separate topics by 'start' or 'continue' later
-
-  return targets.reduce((acc: LooseObject, target: LooseObject) => {
-    for (const startEvent of target.startEvents) {
-      acc[startEvent] = {
-        consumesFrom: [envs.STREAM_INTERFACE],
-      }
+      })
+      return acc
+    },
+    {
+      startTopicMap: {},
+      continueTopicMap: {},
+      topicConfig: {},
     }
-    for (const continueEvent of target.continueEvents) {
-      acc[continueEvent] = {
-        consumesFrom: [envs.STREAM_INTERFACE],
-      }
-    }
-    return acc
-  }, {})
+  )
 }
 
 export { fetchTargetTopics }
