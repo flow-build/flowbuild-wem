@@ -10,6 +10,9 @@ const envs = {
       "topics": {
         "wem-start-process": {
           "consumesFrom": ["kafka"]
+        },
+        "target-created": {
+          "consumesFrom": ["kafka"]
         }
       }
     }
