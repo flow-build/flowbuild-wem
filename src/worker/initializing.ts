@@ -33,7 +33,7 @@ async function fetchTargetTopics() {
             acc.topicConfig[definition] = {
               consumesFrom: [envs.STREAM_INTERFACE],
             }
-            if (node.type === 'start') {
+            if (node.type.toLowerCase() === 'start') {
               acc.startTopicMap[definition] = {
                 workflow_name: workflow.name,
               }
