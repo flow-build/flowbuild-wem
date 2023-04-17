@@ -1,3 +1,4 @@
+const WORKFLOW_EVENTS_NAMESPACE = process.env.WORKFLOW_EVENTS_NAMESPACE
 const envs = {
   FLOWBUILD_SERVER_URL:
     process.env.FLOWBUILD_SERVER_URL || 'http://localhost:3000',
@@ -11,7 +12,9 @@ const envs = {
         "wem-start-process": {
           "consumesFrom": ["kafka"]
         },
-        "workflow.create": {
+        "${
+          WORKFLOW_EVENTS_NAMESPACE ? `${WORKFLOW_EVENTS_NAMESPACE}.` : ''
+        }workflow.create": {
           "consumesFrom": ["kafka"]
         }
       }
