@@ -1,7 +1,7 @@
 import { StreamInterface } from '@stream'
 import { createLogger } from '@utils'
-import { EventManager, fetchTargetTopics } from '@event-manager'
 import { envs } from '@configs/env'
+import { EventManager, fetchTargetTopics } from '@event-manager'
 
 async function runWorker() {
   createLogger('info')
@@ -24,7 +24,5 @@ async function runWorker() {
 
   return streamInterface
 }
-
-// runWorker()
 
 export { runWorker }

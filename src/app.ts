@@ -1,12 +1,10 @@
 import Fastify, { FastifyServerOptions } from 'fastify'
 import fastifyCors from '@fastify/cors'
 import { swagger } from './swagger'
-import { runWorker } from './index'
 import { router as tps_router } from '@routes'
+import { StreamInterface } from './stream'
 
-const app = async (opts?: FastifyServerOptions) => {
-  const stream = await runWorker()
-
+const app = async (opts: FastifyServerOptions, stream: StreamInterface) => {
   const fastify = Fastify(opts)
   swagger(fastify)
 
