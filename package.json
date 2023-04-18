@@ -10,9 +10,9 @@
     "test": "jest",
     "test:cov": "pnpm run test --coverage --forceExit",
     "test:badges": "pnpm run test:cov  && jest-coverage-badges",
-    "start": "node ./dist/src/index",
-    "start:dev": "ts-node -r tsconfig-paths/register ./src/index.ts",
-    "start:climem": "export CLIMEM=8990 && pnpm run build && node -r climem -r tsconfig-paths/register ./dist/src/index"
+    "start": "node ./dist/src/server",
+    "start:dev": "ts-node -r tsconfig-paths/register ./src/server.ts",
+    "start:climem": "export CLIMEM=8990 && pnpm run build && node -r climem -r tsconfig-paths/register ./dist/src/server"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +39,10 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "@fastify/cors": "^8.2.0",
+    "@fastify/swagger": "^8.3.1",
+    "@fastify/swagger-ui": "^1.3.0",
+    "fastify": "^4.12.0",
     "axios": "^1.3.4",
     "bullmq": "^3.10.1",
     "kafkajs": "^2.2.3",
