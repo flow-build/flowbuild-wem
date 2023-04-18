@@ -3,13 +3,13 @@ import { envs } from '@configs/env'
 import { runWorker } from './workerRunner'
 
 const runServer = async () => {
-  const stream = await runWorker()
+  const workerEntities = await runWorker()
 
   const server = await app(
     {
       logger: true,
     },
-    stream
+    workerEntities
   )
 
   server.listen({ port: envs.SERVER_PORT, host: '0.0.0.0' }, (err, address) => {

@@ -22,7 +22,7 @@ async function runWorker() {
   await streamInterface.connect(eventManager)
   streamInterface.setConsumer(eventManager)
 
-  return streamInterface
+  return { stream: streamInterface, eventManager }
 }
 
 export { runWorker }
