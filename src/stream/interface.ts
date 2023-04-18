@@ -2,7 +2,7 @@ import { Consumer, EachMessagePayload, Producer } from 'kafkajs'
 import { LooseObject } from '@/types'
 import { EventManager } from '@/worker'
 import { log } from '@/utils'
-import { connectKafka, setClient } from '@stream/kafka'
+import { client, connectKafka, setClient } from '@stream/kafka'
 import { flowbuildQueues, setFlowbuildWorkers, setQueues } from './bullmq'
 import { Job } from 'bullmq'
 
@@ -91,6 +91,13 @@ class StreamInterface {
 
   async shutDown() {
     await this._consumer?.stop()
+  }
+
+  async readTopics() {
+    if (client) {
+      const admin = client.admin()
+      return await admin.listTopics()
+    }
   }
 
   async subscribe(topics: Array<string>) {
