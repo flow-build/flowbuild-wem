@@ -6,9 +6,9 @@ async function router(
   options: FastifyPluginOptions,
   _done: (err?: Error) => void
 ) {
-  const { stream } = options
+  const { workerEntities } = options
 
-  const { read } = tps(fastify, stream)
+  const { read } = tps(fastify, workerEntities)
 
   fastify.route({
     method: 'GET',
