@@ -3,7 +3,7 @@ import { createLogger } from '@utils'
 import { EventManager, fetchTargetTopics } from '@event-manager'
 import { envs } from '@configs/env'
 
-async function main() {
+async function runWorker() {
   createLogger('info')
 
   const { topicConfig, startTopicMap, continueTopicMap } =
@@ -21,6 +21,10 @@ async function main() {
 
   await streamInterface.connect(eventManager)
   streamInterface.setConsumer(eventManager)
+
+  return streamInterface
 }
 
-main()
+// runWorker()
+
+export { runWorker }
