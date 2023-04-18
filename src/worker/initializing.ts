@@ -37,10 +37,12 @@ async function fetchTargetTopics() {
             if (node.type.toLowerCase() === 'start') {
               acc.startTopicMap[topicName] = {
                 workflow_name: workflow.name,
+                version: workflow.version,
               }
             }
             acc.continueTopicMap[topicName] = {
               workflow_name: workflow.name,
+              version: workflow.version,
             }
           }
         }
