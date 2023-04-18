@@ -3,6 +3,7 @@
 import { FastifyInstance } from 'fastify'
 import { app } from '@/app'
 import { StreamInterface } from '@/stream'
+import { EventManager } from '@/worker'
 
 const tpsReadMock = jest.fn(async () => {
   return
@@ -24,7 +25,7 @@ beforeAll(async () => {
     {
       logger: false,
     },
-    {} as StreamInterface
+    { stream: {} as StreamInterface, eventManager: {} as EventManager }
   )
   await server.listen({ port: PORT, host: '0.0.0.0' })
   await server.ready()
