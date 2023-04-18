@@ -30,15 +30,16 @@ async function fetchTargetTopics() {
           )
           if (targetEvent) {
             const { definition } = targetEvent
-            acc.topicConfig[definition] = {
+            const topicName = `WORKFLOW_EVENT-${definition}`
+            acc.topicConfig[topicName] = {
               consumesFrom: [envs.STREAM_INTERFACE],
             }
             if (node.type.toLowerCase() === 'start') {
-              acc.startTopicMap[definition] = {
+              acc.startTopicMap[topicName] = {
                 workflow_name: workflow.name,
               }
             }
-            acc.continueTopicMap[definition] = {
+            acc.continueTopicMap[topicName] = {
               workflow_name: workflow.name,
             }
           }

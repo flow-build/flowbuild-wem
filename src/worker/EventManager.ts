@@ -33,8 +33,8 @@ class EventManager {
   }
 
   private requester: Requester
-  private startTopicMap: { [key: string]: TopicMap }
-  private continueTopicMap: { [key: string]: TopicMap }
+  public startTopicMap: { [key: string]: TopicMap }
+  public continueTopicMap: { [key: string]: TopicMap }
 
   constructor(startTopicMap: LooseObject, continueTopicMap: LooseObject) {
     this.startTopicMap = startTopicMap
@@ -51,13 +51,16 @@ class EventManager {
     const {
       name: workflow_name,
       event: { definition },
+      version,
     } = input
+    const topicName = `WORKFLOW_EVENT-${definition}`
     await EventManager.stream.shutDown()
     await EventManager.stream.connect(this)
-    await EventManager.stream.subscribe([`WORKFLOW_EVENT-${definition}`])
+    await EventManager.stream.subscribe([topicName])
     EventManager.stream.setConsumer(this)
-    this.startTopicMap[definition] = {
+    this.startTopicMap[topicName] = {
       workflow_name,
+      version,
     }
   }
 
