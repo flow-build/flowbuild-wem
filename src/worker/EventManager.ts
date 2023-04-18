@@ -54,7 +54,7 @@ class EventManager {
     } = input
     await EventManager.stream.shutDown()
     await EventManager.stream.connect(this)
-    await EventManager.stream.subscribe([definition])
+    await EventManager.stream.subscribe([`WORKFLOW_EVENT-${definition}`])
     EventManager.stream.setConsumer(this)
     this.startTopicMap[definition] = {
       workflow_name,
@@ -88,7 +88,7 @@ class EventManager {
         method: 'POST',
         body: process_input,
       })
-      console.info('PROCESS CREATION RESPONSE => ', processData)
+      console.info(`[PROCESS CREATION RESPONSE] ${JSON.stringify(processData)}`)
       return processData
     }
   }
@@ -116,7 +116,7 @@ class EventManager {
         this.startFSProcess(inputMessage as StartProcessMessage)
       } else if (topic.includes('workflow.create')) {
         this.connectToTopic(inputMessage as TopicCreationInput)
-      } else {
+      } else if (topic.includes('WORKFLOW_EVENT-')) {
         this.startProcessByTopic(topic, inputMessage as BaseMessage)
       }
     } catch (e) {
