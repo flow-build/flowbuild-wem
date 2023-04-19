@@ -7,10 +7,10 @@ import {
   LooseObject,
   StartProcessMessage,
   TopicCreationInput,
-  TopicMap,
   Workflow,
 } from '@common-types'
 import { identifyTarget } from '@/utils'
+import { RedisClient } from '@/redis'
 
 class EventManager {
   static _instance: EventManager
@@ -33,13 +33,11 @@ class EventManager {
   }
 
   private requester: Requester
-  public startTopicMap: { [key: string]: TopicMap }
-  public continueTopicMap: { [key: string]: TopicMap }
+  private redis: RedisClient
 
-  constructor(startTopicMap: LooseObject, continueTopicMap: LooseObject) {
-    this.startTopicMap = startTopicMap
-    this.continueTopicMap = continueTopicMap
+  constructor() {
     this.requester = new Requester()
+    this.redis = new RedisClient()
     if (EventManager.instance) {
       return EventManager.instance
     }
@@ -49,19 +47,20 @@ class EventManager {
 
   async connectToTopic(input: TopicCreationInput) {
     const {
-      name: workflow_name,
       event: { definition },
-      version,
     } = input
     const topicName = `WORKFLOW_EVENT-${definition}`
     await EventManager.stream.shutDown()
     await EventManager.stream.connect(this)
     await EventManager.stream.subscribe([topicName])
     EventManager.stream.setConsumer(this)
-    this.startTopicMap[topicName] = {
-      workflow_name,
-      version,
-    }
+    await this.redis.set(
+      `start-topics:${topicName}`,
+      JSON.stringify({
+        ...input,
+        topic: topicName,
+      })
+    )
   }
 
   async continueFSProcess(input: ContinueProcessMessage) {
@@ -72,7 +71,7 @@ class EventManager {
         method: 'POST',
         body: process_input,
       })
-      console.info('PROCESS CONTINUE RESPONSE => ', processData)
+      console.info(`[PROCESS CONTINUE RESPONSE] | ${processData}`)
       return processData
     }
   }
@@ -91,33 +90,41 @@ class EventManager {
         method: 'POST',
         body: process_input,
       })
-      console.info(`[PROCESS CREATION RESPONSE] ${JSON.stringify(processData)}`)
+      console.info(
+        `[PROCESS CREATION RESPONSE] | ${JSON.stringify(processData)}`
+      )
       return processData
     }
   }
 
   async startProcessByTopic(topic: string, input: BaseMessage) {
-    const start = this.startTopicMap[topic]
-    if (start && start.workflow_name) {
-      this.startFSProcess({ ...input, workflow_name: start.workflow_name })
+    const start = (await this.redis.get(`start-topics:${topic}`)) as LooseObject
+    if (start && start.name) {
+      this.startFSProcess({ ...input, workflow_name: start.name })
     }
 
-    const _continue = this.continueTopicMap[topic]
-    if (_continue && _continue.workflow_name) {
+    const _continue = (await this.redis.get(
+      `continue-topics:${topic}`
+    )) as LooseObject
+    if (_continue && _continue.name) {
       this.continueFSProcess({
         ...input,
-        workflow_name: _continue.workflow_name,
+        workflow_name: _continue.name,
       })
     }
   }
 
   async runAction(topic: string, inputMessage: LooseObject) {
-    console.info('inputMessage at EM: ', inputMessage)
+    console.info(
+      `[EM-inputMessage] | TOPIC: ${topic} | INPUT: ${JSON.stringify(
+        inputMessage
+      )}`
+    )
 
     try {
-      if (topic === 'wem-start-process') {
+      if (topic.includes('wem.process.start')) {
         this.startFSProcess(inputMessage as StartProcessMessage)
-      } else if (topic.includes('workflow.create')) {
+      } else if (topic.includes('wem.workflow.create')) {
         this.connectToTopic(inputMessage as TopicCreationInput)
       } else if (topic.includes('WORKFLOW_EVENT-')) {
         this.startProcessByTopic(topic, inputMessage as BaseMessage)

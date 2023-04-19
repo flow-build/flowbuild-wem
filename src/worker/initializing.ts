@@ -35,23 +35,31 @@ async function fetchTargetTopics() {
               consumesFrom: [envs.STREAM_INTERFACE],
             }
             if (node.type.toLowerCase() === 'start') {
-              acc.startTopicMap[topicName] = {
-                workflow_name: workflow.name,
+              acc.startTopics[`start-topics:${topicName}`] = {
+                topic: topicName,
+                workflow_id: workflow.id,
+                name: workflow.name,
+                event: targetEvent,
                 version: workflow.version,
               }
+              return
             }
-            acc.continueTopicMap[topicName] = {
-              workflow_name: workflow.name,
+            acc.continueTopics[`continue-topics:${topicName}`] = {
+              topic: topicName,
+              workflow_id: workflow.id,
+              name: workflow.name,
+              event: targetEvent,
               version: workflow.version,
             }
+            return
           }
         }
       })
       return acc
     },
     {
-      startTopicMap: {},
-      continueTopicMap: {},
+      startTopics: {},
+      continueTopics: {},
       topicConfig: {},
     }
   )
