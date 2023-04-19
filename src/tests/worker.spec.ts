@@ -47,7 +47,7 @@ let worker: EventManager
 
 beforeAll(async () => {
   createLogger('test')
-  worker = new EventManager({}, {})
+  worker = new EventManager()
   stream = new StreamInterface(envs.STREAM_CONFIG)
   EventManager.stream = stream
   await stream.connect(worker)
@@ -59,7 +59,7 @@ it('should correctly RUN consumer connection', async () => {
 })
 
 it('should correctly run EventManager', async () => {
-  await worker.runAction('wem-start-process', {
+  await worker.runAction('wem.process.start', {
     workflow_name: 'TEST_TARGET',
     process_input: { TEST: 'DATA' },
   })
