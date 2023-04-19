@@ -9,12 +9,14 @@ const envs = {
       `
     {
       "topics": {
-        "wem-start-process": {
+        "${
+          WORKFLOW_EVENTS_NAMESPACE ? `${WORKFLOW_EVENTS_NAMESPACE}.` : ''
+        }wem.process.start": {
           "consumesFrom": ["kafka"]
         },
         "${
           WORKFLOW_EVENTS_NAMESPACE ? `${WORKFLOW_EVENTS_NAMESPACE}.` : ''
-        }workflow.create": {
+        }wem.workflow.create": {
           "consumesFrom": ["kafka"]
         }
       }
