@@ -9,6 +9,12 @@ jest.mock('bullmq', () => {
   }
 })
 
+jest.mock('@fastify/redis', () => {
+  return (_f, _o, done) => {
+    done()
+  }
+})
+
 const axiosMock = jest.fn(({ url }) => {
   if (url.includes('/token')) {
     return { data: { jwtToken: 'testToken' } }
@@ -50,6 +56,21 @@ jest.mock('@utils/logger', () => {
   }
 })
 
+let redisMap = {}
+
+const mockRedis = {
+  get: jest.fn(async (key) => redisMap[key]),
+  mget: jest.fn(async (key) => Object.values(redisMap)),
+  keys: jest.fn(async (key) => Object.keys(redisMap)),
+  set: jest.fn(async (key, value, opts) => {
+    redisMap[key] = value
+    return 'OK'
+  }),
+  del: jest.fn(async (key) => delete redisMap[key]),
+  delAll: jest.fn(async () => redisMap = {}),
+}
+
 module.exports = {
-  axiosMock
+  axiosMock,
+  mockRedis
 }
