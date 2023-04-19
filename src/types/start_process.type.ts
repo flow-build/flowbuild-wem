@@ -1,10 +1,5 @@
 import { LooseObject } from './LooseObject.type'
 
-export type TopicMap = {
-  workflow_name: string
-  version: number
-}
-
 export type BaseMessage = {
   process_input: LooseObject
   process_id?: string
