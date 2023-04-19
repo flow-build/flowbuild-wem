@@ -17,7 +17,7 @@ const app = async (opts: FastifyServerOptions) => {
     host: envs.REDIS_HOST,
     port: parseInt(envs.REDIS_PORT, 10),
     password: envs.REDIS_PASSWORD || '',
-    db: 7,
+    db: parseInt(envs.REDIS_WEM_EVENTS_DB, 10),
   })
 
   fastify.get('/health', { schema: { tags: ['Health'] } }, (request, reply) => {

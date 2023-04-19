@@ -39,7 +39,7 @@ class RedisClient {
   }
 
   async setClients() {
-    await this._client.select(7)
+    await this._client.select(parseInt(envs.REDIS_WEM_EVENTS_DB, 10))
   }
 
   async get(key: string): Promise<LooseObject | string> {
