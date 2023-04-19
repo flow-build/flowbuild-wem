@@ -3,12 +3,10 @@ import { tps } from '@controllers'
 
 async function router(
   fastify: FastifyInstance,
-  options: FastifyPluginOptions,
+  _options: FastifyPluginOptions,
   _done: (err?: Error) => void
 ) {
-  const { workerEntities } = options
-
-  const { read } = tps(fastify, workerEntities)
+  const { read } = tps(fastify)
 
   fastify.route({
     method: 'GET',
