@@ -23,36 +23,31 @@ async function fetchTargetTopics() {
         blueprint_spec: { nodes },
       } = workflow
       nodes.forEach((node: Node) => {
-        const events = node?.parameters?.events || []
-        if (events.length) {
-          const targetEvent = events.find(
-            (e: LooseObject) => e.category === 'signal' && e.family === 'target'
-          )
-          if (targetEvent) {
-            const { definition } = targetEvent
-            const topicName = `WORKFLOW_EVENT-${definition}`
-            acc.topicConfig[topicName] = {
-              consumesFrom: [envs.STREAM_INTERFACE],
-            }
-            if (node.type.toLowerCase() === 'start') {
-              acc.startTopics[`start-topics:${topicName}`] = {
-                topic: topicName,
-                workflow_id: workflow.id,
-                name: workflow.name,
-                event: targetEvent,
-                version: workflow.version,
-              }
-              return
-            }
-            acc.continueTopics[`continue-topics:${topicName}`] = {
+        const event = node?.parameters || {}
+        if (event.family && event.definition) {
+          const { definition } = event
+          const topicName = `WORKFLOW_EVENT-${definition}`
+          acc.topicConfig[topicName] = {
+            consumesFrom: [envs.STREAM_INTERFACE],
+          }
+          if (node.type.toLowerCase() === 'start') {
+            acc.startTopics[`start-topics:${topicName}`] = {
               topic: topicName,
               workflow_id: workflow.id,
               name: workflow.name,
-              event: targetEvent,
+              event,
               version: workflow.version,
             }
             return
           }
+          acc.continueTopics[`continue-topics:${topicName}`] = {
+            topic: topicName,
+            workflow_id: workflow.id,
+            name: workflow.name,
+            event,
+            version: workflow.version,
+          }
+          return
         }
       })
       return acc
