@@ -45,7 +45,7 @@ class EventManager {
     return this
   }
 
-  async connectToTopic(input: TopicCreationInput) {
+  async connectToStartTopic(input: TopicCreationInput) {
     const {
       event: { definition },
     } = input
@@ -63,6 +63,28 @@ class EventManager {
     )
   }
 
+  async connectToContinueTopic(input: TopicCreationInput) {
+    const {
+      event: { definition },
+    } = input
+    const topicName = `WORKFLOW_EVENT-${definition}`
+    const topics = await EventManager.stream.readTopics()
+    const foundTopic = topics?.find((topic: string) => topicName === topic)
+    if (!foundTopic) {
+      await EventManager.stream.shutDown()
+      await EventManager.stream.connect(this)
+      await EventManager.stream.subscribe([topicName])
+      EventManager.stream.setConsumer(this)
+      await this.redis.set(
+        `continue-topics:${topicName}`,
+        JSON.stringify({
+          ...input,
+          topic: topicName,
+        })
+      )
+    }
+  }
+
   async continueFSProcess(input: ContinueProcessMessage) {
     const { process_id, process_input } = input
     if (process_id) {
@@ -71,7 +93,9 @@ class EventManager {
         method: 'POST',
         body: process_input,
       })
-      console.info(`[PROCESS CONTINUE RESPONSE] | ${processData}`)
+      console.info(
+        `[PROCESS CONTINUE RESPONSE] | [PID] ${process_id} | ${processData}`
+      )
       return processData
     }
   }
@@ -106,11 +130,8 @@ class EventManager {
     const _continue = (await this.redis.get(
       `continue-topics:${topic}`
     )) as LooseObject
-    if (_continue && _continue.name) {
-      this.continueFSProcess({
-        ...input,
-        workflow_name: _continue.name,
-      })
+    if (_continue && input.process_id) {
+      this.continueFSProcess(input)
     }
   }
 
@@ -124,8 +145,10 @@ class EventManager {
     try {
       if (topic.includes('wem.process.start')) {
         this.startFSProcess(inputMessage as StartProcessMessage)
-      } else if (topic.includes('wem.workflow.create')) {
-        this.connectToTopic(inputMessage as TopicCreationInput)
+      } else if (topic.includes('wem.workflow.target.create')) {
+        this.connectToStartTopic(inputMessage as TopicCreationInput)
+      } else if (topic.includes('wem.process.target.create')) {
+        this.connectToContinueTopic(inputMessage as TopicCreationInput)
       } else if (topic.includes('WORKFLOW_EVENT-')) {
         this.startProcessByTopic(topic, inputMessage as BaseMessage)
       }
