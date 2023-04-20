@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import { StreamInterface } from '@stream'
 import { tps } from '@controllers'
-import { EventManager } from '@/worker'
+const { mockRedis } = require('../../.jest/setMocks')
 
 const sendMock = jest.fn((_resp) => {
   return
@@ -14,24 +15,12 @@ const reply = {
   }),
 } as unknown as FastifyReply
 
-const streamMock = {
-  readTopics: jest.fn(() => {
-    return ['topic-1', 'WORKFLOW_EVENT-topic-2']
-  }),
-} as unknown as StreamInterface
-
 let read: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
 
-const mockedTopicData = { test: 'data' }
 beforeAll(async () => {
-  ;({ read } = tps({} as FastifyInstance, {
-    stream: streamMock,
-    eventManager: {
-      startTopicMap: {
-        'WORKFLOW_EVENT-topic-2': mockedTopicData,
-      },
-    } as unknown as EventManager,
-  }))
+  ;({ read } = tps({
+    redis: mockRedis,
+  } as unknown as FastifyInstance))
 })
 
 beforeEach(async () => {
@@ -39,15 +28,21 @@ beforeEach(async () => {
 })
 
 it('should run READ Topics', async () => {
+  const topicData = {
+    name: 'TEST',
+    topic: 'WORKFLOW_EVENT-topic-2',
+    version: 2,
+  }
+  mockRedis.set('WORKFLOW_EVENT-topic-2', JSON.stringify(topicData))
+
   await read({} as FastifyRequest, reply)
 
+  expect(mockRedis.mget).toHaveBeenCalled()
   expect(reply.code).toHaveBeenCalledTimes(1)
   expect(reply.code).toHaveBeenCalledWith(200)
   expect(sendMock).toHaveBeenCalledTimes(1)
-  expect(sendMock).toHaveBeenCalledWith([
-    {
-      topic: 'WORKFLOW_EVENT-topic-2',
-      ...mockedTopicData,
-    },
-  ])
+  expect(sendMock).toHaveBeenCalledWith({
+    continueTopics: [topicData],
+    startTopics: [topicData],
+  })
 })

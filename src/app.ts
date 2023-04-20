@@ -1,14 +1,11 @@
 import Fastify, { FastifyServerOptions } from 'fastify'
 import fastifyCors from '@fastify/cors'
+import fastifyRedis from '@fastify/redis'
 import { swagger } from './swagger'
 import { router as tps_router } from '@routes'
-import { EventManager } from './worker'
-import { StreamInterface } from './stream'
+import { envs } from './configs/env'
 
-const app = async (
-  opts: FastifyServerOptions,
-  workerEntities: { eventManager: EventManager; stream: StreamInterface }
-) => {
+const app = async (opts: FastifyServerOptions) => {
   const fastify = Fastify(opts)
   swagger(fastify)
 
@@ -16,11 +13,18 @@ const app = async (
     origin: '*',
   })
 
+  await fastify.register(fastifyRedis, {
+    host: envs.REDIS_HOST,
+    port: parseInt(envs.REDIS_PORT, 10),
+    password: envs.REDIS_PASSWORD || '',
+    db: parseInt(envs.REDIS_WEM_EVENTS_DB, 10),
+  })
+
   fastify.get('/health', { schema: { tags: ['Health'] } }, (request, reply) => {
     return reply.send('OK')
   })
 
-  fastify.register(tps_router, { prefix: '/topics', workerEntities })
+  fastify.register(tps_router, { prefix: '/topics' })
 
   return fastify
 }
