@@ -13,11 +13,31 @@ const axiosMock = jest.fn(({ url }) => {
   if (url.includes('/token')) {
     return { data: { jwtToken: 'testToken' } }
   }
-  return {
-    data: {
-      process_id: 'TEST_PROCESS_ID'
+  if (url.includes('/start')) {
+    return {
+      data: {
+        process_id: 'TEST_PROCESS_ID'
+      }
     }
   }
+  if (url.includes('/workflows/name/TEST_TARGET')) {
+    return {
+      data: {
+        blueprint_spec: {
+          nodes: [{
+            type: 'start',
+            parameters: {
+              events: [{
+                category: 'signal',
+                family: 'target'
+              }]
+            }
+          }]
+        }
+      }
+    }
+  }
+  return { data: {} }
 })
 jest.mock('axios', () => {
   return axiosMock

@@ -1,3 +1,4 @@
+const WORKFLOW_EVENTS_NAMESPACE = process.env.WORKFLOW_EVENTS_NAMESPACE
 const envs = {
   FLOWBUILD_SERVER_URL:
     process.env.FLOWBUILD_SERVER_URL || 'http://localhost:3000',
@@ -11,7 +12,9 @@ const envs = {
         "wem-start-process": {
           "consumesFrom": ["kafka"]
         },
-        "workflow.create": {
+        "${
+          WORKFLOW_EVENTS_NAMESPACE ? `${WORKFLOW_EVENTS_NAMESPACE}.` : ''
+        }workflow.create": {
           "consumesFrom": ["kafka"]
         }
       }
@@ -27,6 +30,8 @@ const envs = {
     process.env.REDIS_PASSWORD || 'eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81',
   REDIS_HOST: process.env.REDIS_HOST || 'localhost',
   REDIS_PORT: process.env.REDIS_PORT || '6379',
+  SERVER_HOST: process.env.SERVER_HOST || 'locahost',
+  SERVER_PORT: parseInt(process.env.SERVER_PORT || '3333', 10),
 }
 export { envs }
 

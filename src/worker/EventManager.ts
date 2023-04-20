@@ -8,7 +8,9 @@ import {
   StartProcessMessage,
   TopicCreationInput,
   TopicMap,
+  Workflow,
 } from '@common-types'
+import { identifyTarget } from '@/utils'
 
 class EventManager {
   static _instance: EventManager
@@ -31,8 +33,8 @@ class EventManager {
   }
 
   private requester: Requester
-  private startTopicMap: { [key: string]: TopicMap }
-  private continueTopicMap: { [key: string]: TopicMap }
+  public startTopicMap: { [key: string]: TopicMap }
+  public continueTopicMap: { [key: string]: TopicMap }
 
   constructor(startTopicMap: LooseObject, continueTopicMap: LooseObject) {
     this.startTopicMap = startTopicMap
@@ -49,13 +51,16 @@ class EventManager {
     const {
       name: workflow_name,
       event: { definition },
+      version,
     } = input
+    const topicName = `WORKFLOW_EVENT-${definition}`
     await EventManager.stream.shutDown()
     await EventManager.stream.connect(this)
-    await EventManager.stream.subscribe([definition])
+    await EventManager.stream.subscribe([topicName])
     EventManager.stream.setConsumer(this)
-    this.startTopicMap[definition] = {
+    this.startTopicMap[topicName] = {
       workflow_name,
+      version,
     }
   }
 
@@ -67,20 +72,28 @@ class EventManager {
         method: 'POST',
         body: process_input,
       })
-      console.info('PROCESS CREATION RESPONSE => ', processData)
+      console.info('PROCESS CONTINUE RESPONSE => ', processData)
       return processData
     }
   }
 
   async startFSProcess(input: StartProcessMessage) {
     const { workflow_name, process_input } = input
-    const processData = await this.requester.makeAuthenticatedRequest({
-      url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
-      method: 'POST',
-      body: process_input,
-    })
-    console.info('PROCESS CREATION RESPONSE => ', processData)
-    return processData
+
+    const workflow = (await this.requester.makeAuthenticatedRequest({
+      url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}`,
+    })) as Workflow
+    const { blueprint_spec } = workflow
+    const [hasTarget] = identifyTarget(blueprint_spec)
+    if (hasTarget) {
+      const processData = await this.requester.makeAuthenticatedRequest({
+        url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
+        method: 'POST',
+        body: process_input,
+      })
+      console.info(`[PROCESS CREATION RESPONSE] ${JSON.stringify(processData)}`)
+      return processData
+    }
   }
 
   async startProcessByTopic(topic: string, input: BaseMessage) {
@@ -104,9 +117,9 @@ class EventManager {
     try {
       if (topic === 'wem-start-process') {
         this.startFSProcess(inputMessage as StartProcessMessage)
-      } else if (topic === 'workflow.create') {
+      } else if (topic.includes('workflow.create')) {
         this.connectToTopic(inputMessage as TopicCreationInput)
-      } else {
+      } else if (topic.includes('WORKFLOW_EVENT-')) {
         this.startProcessByTopic(topic, inputMessage as BaseMessage)
       }
     } catch (e) {

@@ -5,4 +5,5 @@ export type TopicCreationInput = {
     family: string
     category: string
   }
+  version: number
 }
