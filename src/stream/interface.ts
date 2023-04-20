@@ -89,6 +89,19 @@ class StreamInterface {
     }
   }
 
+  async shutDown() {
+    await this._consumer?.stop()
+  }
+
+  async subscribe(topics: Array<string>) {
+    for (const topic of topics) {
+      await this._consumer?.subscribe({
+        topic: topic,
+        fromBeginning: true,
+      })
+    }
+  }
+
   async setConsumer(orchestrator: EventManager) {
     const kafkaTopics = this._streams['kafka']
     if (kafkaTopics && kafkaTopics.consumesFrom) {
@@ -101,15 +114,6 @@ class StreamInterface {
     // const bullmqTopics = this._streams['bullmq']
     // if (bullmqTopics && bullmqTopics.consumesFrom) {
     // }
-  }
-
-  async subscribe(topics: Array<string>) {
-    for (const topic of topics) {
-      await this._consumer?.subscribe({
-        topic: topic,
-        fromBeginning: true,
-      })
-    }
   }
 
   // Kafka consumer cb

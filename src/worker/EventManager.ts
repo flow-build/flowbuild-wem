@@ -47,9 +47,16 @@ class EventManager {
 
   async connectToTopic(input: TopicCreationInput) {
     const {
+      name: workflow_name,
       event: { definition },
     } = input
+    await EventManager.stream.shutDown()
+    await EventManager.stream.connect(this)
     await EventManager.stream.subscribe([definition])
+    EventManager.stream.setConsumer(this)
+    this.startTopicMap[definition] = {
+      workflow_name,
+    }
   }
 
   async continueFSProcess(input: ContinueProcessMessage) {
@@ -78,12 +85,12 @@ class EventManager {
 
   async startProcessByTopic(topic: string, input: BaseMessage) {
     const start = this.startTopicMap[topic]
-    if (start.workflow_name) {
+    if (start && start.workflow_name) {
       this.startFSProcess({ ...input, workflow_name: start.workflow_name })
     }
 
     const _continue = this.continueTopicMap[topic]
-    if (_continue.workflow_name) {
+    if (_continue && _continue.workflow_name) {
       this.continueFSProcess({
         ...input,
         workflow_name: _continue.workflow_name,
@@ -97,7 +104,7 @@ class EventManager {
     try {
       if (topic === 'wem-start-process') {
         this.startFSProcess(inputMessage as StartProcessMessage)
-      } else if (topic === 'target-created') {
+      } else if (topic === 'workflow.create') {
         this.connectToTopic(inputMessage as TopicCreationInput)
       } else {
         this.startProcessByTopic(topic, inputMessage as BaseMessage)

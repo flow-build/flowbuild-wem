@@ -11,7 +11,7 @@ const envs = {
         "wem-start-process": {
           "consumesFrom": ["kafka"]
         },
-        "target-created": {
+        "workflow.create": {
           "consumesFrom": ["kafka"]
         }
       }
