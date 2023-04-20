@@ -16,7 +16,12 @@ const envs = {
         },
         "${
           WORKFLOW_EVENTS_NAMESPACE ? `${WORKFLOW_EVENTS_NAMESPACE}.` : ''
-        }wem.workflow.create": {
+        }wem.workflow.target.create": {
+          "consumesFrom": ["kafka"]
+        },
+        "${
+          WORKFLOW_EVENTS_NAMESPACE ? `${WORKFLOW_EVENTS_NAMESPACE}.` : ''
+        }wem.process.target.create": {
           "consumesFrom": ["kafka"]
         }
       }
