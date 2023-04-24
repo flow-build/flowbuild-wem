@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid'
 import { StreamInterface } from '@stream'
 import { createLogger } from '@utils'
 import { envs } from '@configs/env'
@@ -7,7 +8,10 @@ import { RedisClient } from './redis'
 async function runWorker() {
   createLogger('info')
 
-  const { topicConfig, startTopics, continueTopics } = await fetchTargetTopics()
+  const wemId = uuid()
+  const { topicConfig, startTopics, continueTopics } = await fetchTargetTopics(
+    wemId
+  )
 
   const redis = new RedisClient()
   await redis.mSet(startTopics)
@@ -19,7 +23,7 @@ async function runWorker() {
   }
 
   const streamInterface = new StreamInterface(streamConfig)
-  const eventManager = new EventManager()
+  const eventManager = new EventManager(wemId)
 
   EventManager.stream = streamInterface
 

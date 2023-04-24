@@ -6,6 +6,11 @@ import { LooseObject } from '@/types'
 const in_memory_cache = new NodeCache()
 
 class Requester {
+  private wemId: string
+  constructor(wemId: string) {
+    this.wemId = wemId
+  }
+
   async getToken() {
     const cachedToken = await in_memory_cache.get('FS_TOKEN')
     if (!cachedToken) {
@@ -14,6 +19,10 @@ class Requester {
         method: 'POST',
         headers: {
           'x-duration': envs.FS_TOKEN_EXPIRE,
+        },
+        data: {
+          actor_id: `WEM-${this.wemId}`,
+          claims: ['wem'],
         },
       })
       const { jwtToken } = data as LooseObject

@@ -2,8 +2,8 @@ import { envs } from '@/configs/env'
 import { Requester } from './requester'
 import { Workflow, Node, LooseObject } from '@/types'
 
-async function fetchTargetTopics() {
-  const requester = new Requester()
+async function fetchTargetTopics(wemId: string) {
+  const requester = new Requester(wemId)
 
   const workflows = await requester.makeAuthenticatedRequest({
     url: `${envs.FLOWBUILD_SERVER_URL}/workflows`,

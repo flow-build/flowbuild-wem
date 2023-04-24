@@ -32,12 +32,14 @@ class EventManager {
     EventManager._stream = producer
   }
 
+  private wemId: string
   private requester: Requester
   private redis: RedisClient
 
-  constructor() {
-    this.requester = new Requester()
+  constructor(wemId: string) {
+    this.wemId = wemId
     this.redis = new RedisClient()
+    this.requester = new Requester(this.wemId)
     if (EventManager.instance) {
       return EventManager.instance
     }
