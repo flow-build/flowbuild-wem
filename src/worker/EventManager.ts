@@ -94,7 +94,9 @@ class EventManager {
         body: process_input,
       })
       console.info(
-        `[PROCESS CONTINUE RESPONSE] | [PID] ${process_id} | ${processData}`
+        `[PROCESS CONTINUE RESPONSE] | [PID] ${process_id} | ${JSON.stringify(
+          processData
+        )}`
       )
       return processData
     }
@@ -144,13 +146,13 @@ class EventManager {
 
     try {
       if (topic.includes('wem.process.start')) {
-        this.startFSProcess(inputMessage as StartProcessMessage)
+        await this.startFSProcess(inputMessage as StartProcessMessage)
       } else if (topic.includes('wem.workflow.target.create')) {
-        this.connectToStartTopic(inputMessage as TopicCreationInput)
+        await this.connectToStartTopic(inputMessage as TopicCreationInput)
       } else if (topic.includes('wem.process.target.create')) {
-        this.connectToContinueTopic(inputMessage as TopicCreationInput)
+        await this.connectToContinueTopic(inputMessage as TopicCreationInput)
       } else if (topic.includes('WORKFLOW_EVENT-')) {
-        this.runProcessByTopic(topic, inputMessage as BaseMessage)
+        await this.runProcessByTopic(topic, inputMessage as BaseMessage)
       }
     } catch (e) {
       console.error(e)
