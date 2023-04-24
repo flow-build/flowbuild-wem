@@ -89,7 +89,7 @@ class EventManager {
     const { process_id, process_input } = input
     if (process_id) {
       const processData = await this.requester.makeAuthenticatedRequest({
-        url: `${envs.FLOWBUILD_SERVER_URL}/processes/${process_id}/run`,
+        url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${process_id}/state/run`,
         method: 'POST',
         body: process_input,
       })
@@ -121,7 +121,7 @@ class EventManager {
     }
   }
 
-  async startProcessByTopic(topic: string, input: BaseMessage) {
+  async runProcessByTopic(topic: string, input: BaseMessage) {
     const start = (await this.redis.get(`start-topics:${topic}`)) as LooseObject
     if (start && start.name) {
       this.startFSProcess({ ...input, workflow_name: start.name })
@@ -150,7 +150,7 @@ class EventManager {
       } else if (topic.includes('wem.process.target.create')) {
         this.connectToContinueTopic(inputMessage as TopicCreationInput)
       } else if (topic.includes('WORKFLOW_EVENT-')) {
-        this.startProcessByTopic(topic, inputMessage as BaseMessage)
+        this.runProcessByTopic(topic, inputMessage as BaseMessage)
       }
     } catch (e) {
       console.error(e)

@@ -24,8 +24,9 @@ async function fetchTargetTopics() {
       } = workflow
       nodes.forEach((node: Node) => {
         const event = node?.parameters || {}
-        if (event.family && event.definition) {
-          const { definition } = event
+        const startTarget = event.target
+        if ((event.family && event.definition) || startTarget) {
+          const definition = event.definition || startTarget.definition
           const topicName = `WORKFLOW_EVENT-${definition}`
           acc.topicConfig[topicName] = {
             consumesFrom: [envs.STREAM_INTERFACE],
