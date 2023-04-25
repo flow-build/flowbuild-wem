@@ -70,6 +70,19 @@ const mockRedis = {
   delAll: jest.fn(async () => redisMap = {}),
 }
 
+jest.mock('@redis', () => {
+  return {
+    RedisClient: class RedisClient {
+      get(key) {
+        return mockRedis.get(key)
+      }
+      set(key, value, opts) {
+        return mockRedis.set(key, value, opts)
+      }
+    }
+  }
+})
+
 module.exports = {
   axiosMock,
   mockRedis
