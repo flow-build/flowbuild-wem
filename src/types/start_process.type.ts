@@ -8,6 +8,7 @@ export type BaseMessage = {
 
 export type StartProcessMessage = {
   workflow_name: string
+  workflow_version: number
   process_input: LooseObject
 }
 

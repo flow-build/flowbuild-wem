@@ -48,34 +48,44 @@ class EventManager {
   }
 
   async connectToStartTopic(input: TopicCreationInput) {
-    const {
-      event: { definition },
-    } = input
-    const topicName = `WORKFLOW_EVENT-${definition}`
-    await EventManager.stream.shutDown()
-    await EventManager.stream.connect(this)
-    await EventManager.stream.subscribe([topicName])
-    EventManager.stream.setConsumer(this)
-    await this.redis.set(
-      `start-topics:${topicName}`,
-      JSON.stringify({
-        ...input,
-        topic: topicName,
-      })
-    )
+    const definition = input.event?.definition || ''
+    if (definition) {
+      const topicName = `WORKFLOW_EVENT-${definition}`
+      const topics = await EventManager.stream.readTopics()
+      await EventManager.stream.shutDown()
+      await EventManager.stream.connect(this)
+      const workflowEventsTopics = topics?.filter((t: string) =>
+        t.includes('WORKFLOW_EVENT-')
+      )
+      await EventManager.stream.subscribe([
+        ...(workflowEventsTopics || []),
+        topicName,
+      ])
+      EventManager.stream.setConsumer(this)
+      await this.redis.set(
+        `start-topics:${topicName}`,
+        JSON.stringify({
+          ...input,
+          topic: topicName,
+        })
+      )
+    }
   }
 
   async connectToContinueTopic(input: TopicCreationInput) {
-    const {
-      event: { definition },
-    } = input
-    const topicName = `WORKFLOW_EVENT-${definition}`
-    const topics = await EventManager.stream.readTopics()
-    const foundTopic = topics?.find((topic: string) => topicName === topic)
-    if (!foundTopic) {
+    const definition = input.event?.definition || ''
+    if (definition) {
+      const topicName = `WORKFLOW_EVENT-${definition}`
+      const topics = await EventManager.stream.readTopics()
       await EventManager.stream.shutDown()
       await EventManager.stream.connect(this)
-      await EventManager.stream.subscribe([topicName])
+      const workflowEventsTopics = topics?.filter((t: string) =>
+        t.includes('WORKFLOW_EVENT-')
+      )
+      await EventManager.stream.subscribe([
+        ...(workflowEventsTopics || []),
+        topicName,
+      ])
       EventManager.stream.setConsumer(this)
       await this.redis.set(
         `continue-topics:${topicName}`,
@@ -105,11 +115,22 @@ class EventManager {
   }
 
   async startFSProcess(input: StartProcessMessage) {
-    const { workflow_name, process_input } = input
+    const { workflow_name, workflow_version, process_input } = input
 
-    const workflow = (await this.requester.makeAuthenticatedRequest({
-      url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}`,
-    })) as Workflow
+    let workflow = (await this.redis.get(
+      `workflows:${workflow_name}:${workflow_version}`
+    )) as Workflow
+    if (!workflow) {
+      workflow = (await this.requester.makeAuthenticatedRequest({
+        url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}`,
+      })) as Workflow
+      this.redis.set(
+        `workflows:${workflow_name}:${workflow_version}`,
+        JSON.stringify(workflow),
+        { EX: 3600 }
+      )
+    }
+
     const { blueprint_spec } = workflow
     const [hasTarget] = identifyTarget(blueprint_spec)
     if (hasTarget) {
@@ -128,7 +149,11 @@ class EventManager {
   async runProcessByTopic(topic: string, input: BaseMessage) {
     const start = (await this.redis.get(`start-topics:${topic}`)) as LooseObject
     if (start && start.name) {
-      this.startFSProcess({ ...input, workflow_name: start.name })
+      this.startFSProcess({
+        ...input,
+        workflow_name: start.name,
+        workflow_version: start.version,
+      })
     }
 
     const _continue = (await this.redis.get(
