@@ -100,49 +100,56 @@ class EventManager {
   async continueFSProcess(input: ContinueProcessMessage) {
     const { process_id, process_input } = input
     if (process_id) {
-      const processData = await this.requester.makeAuthenticatedRequest({
-        url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${process_id}/state/run`,
-        method: 'POST',
-        body: process_input,
-      })
-      console.info(
-        `[PROCESS CONTINUE RESPONSE] | [PID] ${process_id} | ${JSON.stringify(
-          processData
-        )}`
-      )
-      return processData
+      try {
+        const processData = await this.requester.makeAuthenticatedRequest({
+          url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${process_id}/state/run`,
+          method: 'POST',
+          body: process_input,
+        })
+        console.info(
+          `[PROCESS CONTINUE RESPONSE] | [PID] ${process_id} | ${JSON.stringify(
+            processData
+          )}`
+        )
+        return processData
+      } catch (e) {
+        console.info(`[PID] ${process_id} | ERROR: ${e}`)
+      }
     }
   }
 
   async startFSProcess(input: StartProcessMessage) {
     const { workflow_name, workflow_version, process_input } = input
+    try {
+      let workflow = (await this.redis.get(
+        `workflows:${workflow_name}:${workflow_version}`
+      )) as Workflow
+      if (!workflow) {
+        workflow = (await this.requester.makeAuthenticatedRequest({
+          url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}`,
+        })) as Workflow
+        this.redis.set(
+          `workflows:${workflow_name}:${workflow_version}`,
+          JSON.stringify(workflow),
+          { EX: 3600 }
+        )
+      }
 
-    let workflow = (await this.redis.get(
-      `workflows:${workflow_name}:${workflow_version}`
-    )) as Workflow
-    if (!workflow) {
-      workflow = (await this.requester.makeAuthenticatedRequest({
-        url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}`,
-      })) as Workflow
-      this.redis.set(
-        `workflows:${workflow_name}:${workflow_version}`,
-        JSON.stringify(workflow),
-        { EX: 3600 }
-      )
-    }
-
-    const { blueprint_spec } = workflow
-    const [hasTarget] = identifyTarget(blueprint_spec)
-    if (hasTarget) {
-      const processData = await this.requester.makeAuthenticatedRequest({
-        url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
-        method: 'POST',
-        body: process_input,
-      })
-      console.info(
-        `[PROCESS CREATION RESPONSE] | ${JSON.stringify(processData)}`
-      )
-      return processData
+      const { blueprint_spec } = workflow
+      const [hasTarget] = identifyTarget(blueprint_spec)
+      if (hasTarget) {
+        const processData = await this.requester.makeAuthenticatedRequest({
+          url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
+          method: 'POST',
+          body: process_input,
+        })
+        console.info(
+          `[PROCESS CREATION RESPONSE] | ${JSON.stringify(processData)}`
+        )
+        return processData
+      }
+    } catch (e) {
+      console.info(`[WF] ${workflow_name}@v${workflow_version} | ERROR: ${e}`)
     }
   }
 
