@@ -32,21 +32,29 @@ async function fetchTargetTopics(wemId: string) {
             consumesFrom: [envs.STREAM_INTERFACE],
           }
           if (node.type.toLowerCase() === 'start') {
-            acc.startTopics[`start-topics:${topicName}`] = {
+            const topics = acc.startTopics[`start-topics:${definition}`]
+            const topicConfig = {
               topic: topicName,
               workflow_id: workflow.id,
-              name: workflow.name,
+              workflow_name: workflow.name,
               event,
-              version: workflow.version,
+              workflow_version: workflow.version,
+            }
+            if (topics && topics.length) {
+              acc.startTopics[`start-topics:${definition}`].push(topicConfig)
+            } else {
+              acc.startTopics[`start-topics:${definition}`] = [topicConfig]
             }
             return
           }
-          acc.continueTopics[`continue-topics:${topicName}`] = {
-            topic: topicName,
-            workflow_id: workflow.id,
-            name: workflow.name,
-            event,
-            version: workflow.version,
+          if (event.family === 'target') {
+            acc.continueTopics[`continue-topics:${definition}`] = {
+              topic: topicName,
+              workflow_id: workflow.id,
+              workflow_name: workflow.name,
+              event,
+              workflow_version: workflow.version,
+            }
           }
           return
         }

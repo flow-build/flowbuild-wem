@@ -6,6 +6,7 @@ import {
   ContinueProcessMessage,
   LooseObject,
   StartProcessMessage,
+  StartProcessResponse,
   TopicCreationInput,
   Workflow,
 } from '@common-types'
@@ -62,12 +63,22 @@ class EventManager {
         topicName,
       ])
       EventManager.stream.setConsumer(this)
-      await this.redis.set(
-        `start-topics:${topicName}`,
-        JSON.stringify({
-          ...input,
+      let targets: Array<LooseObject> = [
+        {
           topic: topicName,
-        })
+          workflow_name: input.name,
+          version: input.version,
+        },
+      ]
+      const registeredTarget = (await this.redis.get(
+        `start-topics:${definition}`
+      )) as Array<LooseObject>
+      if (registeredTarget) {
+        targets = targets.concat(registeredTarget)
+      }
+      await this.redis.set(
+        `start-topics:${definition}`,
+        JSON.stringify(targets)
       )
     }
   }
@@ -88,7 +99,7 @@ class EventManager {
       ])
       EventManager.stream.setConsumer(this)
       await this.redis.set(
-        `continue-topics:${topicName}`,
+        `continue-topics:${definition}`,
         JSON.stringify({
           ...input,
           topic: topicName,
@@ -97,28 +108,73 @@ class EventManager {
     }
   }
 
+  async registerTriggerTargetRelation({
+    trigger_process_id,
+    target_processes,
+    definition,
+  }: {
+    trigger_process_id?: string
+    target_processes: Array<string>
+    definition: string
+  }) {
+    const resolvedTargets = target_processes.map((process_id) => {
+      return {
+        process_id,
+      }
+    })
+    let targets = resolvedTargets
+    const registeredData = (await this.redis.get(
+      `resolved_triggers:${definition}:${trigger_process_id}`
+    )) as LooseObject
+    if (registeredData) {
+      targets = registeredData.targets.concat(resolvedTargets)
+    }
+    await this.redis.set(
+      `resolved_triggers:${definition}:${trigger_process_id}`,
+      JSON.stringify({
+        trigger_process_id,
+        definition,
+        targets,
+      })
+    )
+
+    await Promise.all(
+      targets.map(async (target) => {
+        await this.redis.set(
+          `resolved_targets:${definition}:${target.process_id}`,
+          JSON.stringify({
+            trigger_process_id,
+            definition,
+          })
+        )
+      })
+    )
+  }
+
   async continueFSProcess(input: ContinueProcessMessage) {
-    const { process_id, process_input } = input
-    if (process_id) {
+    const { target_process_id, process_input } = input
+    if (target_process_id) {
       try {
         const processData = await this.requester.makeAuthenticatedRequest({
-          url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${process_id}/state/run`,
+          url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${target_process_id}/state/run`,
           method: 'POST',
           body: process_input,
         })
         console.info(
-          `[PROCESS CONTINUE RESPONSE] | [PID] ${process_id} | ${JSON.stringify(
+          `[PROCESS CONTINUE RESPONSE] | [PID] ${target_process_id} | ${JSON.stringify(
             processData
           )}`
         )
         return processData
       } catch (e) {
-        console.info(`[PID] ${process_id} | ERROR: ${e}`)
+        console.info(`[PID] ${target_process_id} | ERROR: ${e}`)
       }
     }
   }
 
-  async startFSProcess(input: StartProcessMessage) {
+  async startFSProcess(
+    input: StartProcessMessage
+  ): Promise<StartProcessResponse | undefined> {
     const { workflow_name, workflow_version, process_input } = input
     try {
       let workflow = (await this.redis.get(
@@ -154,20 +210,38 @@ class EventManager {
   }
 
   async runProcessByTopic(topic: string, input: BaseMessage) {
+    const { trigger_process_id } = input
+
     const start = (await this.redis.get(`start-topics:${topic}`)) as LooseObject
-    if (start && start.name) {
-      this.startFSProcess({
-        ...input,
-        workflow_name: start.name,
-        workflow_version: start.version,
+    if (start && start.length) {
+      const startInput = start.map((s: LooseObject) => {
+        return { ...s, ...input }
       })
+      const responses = await Promise.all(
+        startInput.map((input: StartProcessMessage) =>
+          this.startFSProcess(input)
+        )
+      )
+      if (responses.length) {
+        await this.registerTriggerTargetRelation({
+          definition: topic,
+          trigger_process_id,
+          target_processes: responses.map((response) => response.process_id),
+        })
+      }
     }
 
     const _continue = (await this.redis.get(
       `continue-topics:${topic}`
     )) as LooseObject
-    if (_continue && input.process_id) {
+    const { target_process_id } = input
+    if (_continue && target_process_id) {
       this.continueFSProcess(input)
+      await this.registerTriggerTargetRelation({
+        definition: topic,
+        trigger_process_id,
+        target_processes: [target_process_id],
+      })
     }
   }
 
@@ -186,7 +260,8 @@ class EventManager {
       } else if (topic.includes('wem.process.target.create')) {
         await this.connectToContinueTopic(inputMessage as TopicCreationInput)
       } else if (topic.includes('WORKFLOW_EVENT-')) {
-        await this.runProcessByTopic(topic, inputMessage as BaseMessage)
+        const parsedTopic = topic.replace('WORKFLOW_EVENT-', '')
+        await this.runProcessByTopic(parsedTopic, inputMessage as BaseMessage)
       }
     } catch (e) {
       console.error(e)
