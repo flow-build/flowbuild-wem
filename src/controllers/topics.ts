@@ -33,6 +33,18 @@ const controllers = (fastify: FastifyInstance) => {
         continueTopics: mountResponse(continueTopics, continueKeys),
       })
     },
+    readRelations: async (request: FastifyRequest, reply: FastifyReply) => {
+      const { process_id, definition } = request.params as {
+        process_id: string
+        definition: string
+      }
+      const response = (await redis.get(
+        `resolved_triggers:WORKFLOW_EVENT-${definition}:${process_id}`
+      )) as string
+      if (response) {
+        return reply.code(200).send(JSON.parse(response))
+      }
+    },
   }
 }
 
