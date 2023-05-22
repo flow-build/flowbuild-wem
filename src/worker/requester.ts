@@ -11,8 +11,16 @@ class Requester {
     this.wemId = wemId
   }
 
-  async getToken() {
-    const cachedToken = await in_memory_cache.get('FS_TOKEN')
+  async getToken(
+    {
+      useCache,
+      parentProcessId,
+    }: { useCache: boolean; parentProcessId?: string } = { useCache: true }
+  ) {
+    let cachedToken
+    if (useCache) {
+      cachedToken = await in_memory_cache.get('FS_TOKEN')
+    }
     if (!cachedToken) {
       const { data } = await axios({
         url: `${envs.FLOWBUILD_SERVER_URL}/token`,
@@ -23,6 +31,7 @@ class Requester {
         data: {
           actor_id: `WEM-${this.wemId}`,
           claims: ['wem'],
+          parentProcessId,
         },
       })
       const { jwtToken } = data as LooseObject
@@ -65,6 +74,32 @@ class Requester {
     method?: string
   }) {
     const token = await this.getToken()
+
+    return await this.makeRequest({
+      url,
+      body,
+      method,
+      headers: {
+        ...headers,
+        authorization: `Bearer ${token}`,
+      },
+    })
+  }
+
+  async makeParentAuthenticatedRequest({
+    url,
+    body,
+    headers,
+    method,
+    parentProcessId,
+  }: {
+    url: string
+    body?: LooseObject
+    headers?: LooseObject
+    method?: string
+    parentProcessId: string
+  }) {
+    const token = await this.getToken({ useCache: false, parentProcessId })
 
     return await this.makeRequest({
       url,

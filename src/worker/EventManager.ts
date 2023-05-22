@@ -67,14 +67,22 @@ class EventManager {
         {
           topic: topicName,
           workflow_name: input.name,
-          version: input.version,
+          workflow_version: input.version,
         },
       ]
       const registeredTarget = (await this.redis.get(
         `start-topics:${definition}`
       )) as Array<LooseObject>
       if (registeredTarget) {
-        targets = targets.concat(registeredTarget)
+        const foundTarget = registeredTarget.find(
+          (trgt) => trgt.workflow_name === input.name
+        )
+        if (foundTarget) {
+          foundTarget.workflow_version = input.version
+          targets = registeredTarget
+        } else {
+          targets = targets.concat(registeredTarget)
+        }
       }
       await this.redis.set(
         `start-topics:${definition}`,
@@ -112,10 +120,12 @@ class EventManager {
     trigger_process_id,
     target_processes,
     definition,
+    category,
   }: {
     trigger_process_id?: string
     target_processes: Array<string>
     definition: string
+    category: string
   }) {
     const resolvedTargets = target_processes.map((process_id) => {
       return {
@@ -124,27 +134,29 @@ class EventManager {
     })
     let targets = resolvedTargets
     const registeredData = (await this.redis.get(
-      `resolved_triggers:${definition}:${trigger_process_id}`
+      `resolved_triggers:${trigger_process_id}:${definition}`
     )) as LooseObject
     if (registeredData) {
       targets = registeredData.targets.concat(resolvedTargets)
     }
     await this.redis.set(
-      `resolved_triggers:${definition}:${trigger_process_id}`,
+      `resolved_triggers:${trigger_process_id}:${definition}`,
       JSON.stringify({
         trigger_process_id,
         definition,
         targets,
+        category,
       })
     )
 
     await Promise.all(
       targets.map(async (target) => {
         await this.redis.set(
-          `resolved_targets:${definition}:${target.process_id}`,
+          `resolved_targets:${target.process_id}:${definition}`,
           JSON.stringify({
             trigger_process_id,
             definition,
+            category,
           })
         )
       })
@@ -152,14 +164,17 @@ class EventManager {
   }
 
   async continueFSProcess(input: ContinueProcessMessage) {
-    const { target_process_id, process_input } = input
+    const { target_process_id, trigger_process_id, process_input } = input
     if (target_process_id) {
       try {
-        const processData = await this.requester.makeAuthenticatedRequest({
-          url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${target_process_id}/state/run`,
-          method: 'POST',
-          body: process_input,
-        })
+        const processData = await this.requester.makeParentAuthenticatedRequest(
+          {
+            url: `${envs.FLOWBUILD_SERVER_URL}/cockpit/processes/${target_process_id}/state/run`,
+            method: 'POST',
+            body: process_input,
+            parentProcessId: `${trigger_process_id}`,
+          }
+        )
         console.info(
           `[PROCESS CONTINUE RESPONSE] | [PID] ${target_process_id} | ${JSON.stringify(
             processData
@@ -175,7 +190,12 @@ class EventManager {
   async startFSProcess(
     input: StartProcessMessage
   ): Promise<StartProcessResponse | undefined> {
-    const { workflow_name, workflow_version, process_input } = input
+    const {
+      workflow_name,
+      workflow_version,
+      process_input,
+      trigger_process_id,
+    } = input
     try {
       let workflow = (await this.redis.get(
         `workflows:${workflow_name}:${workflow_version}`
@@ -194,11 +214,14 @@ class EventManager {
       const { blueprint_spec } = workflow
       const [hasTarget] = identifyTarget(blueprint_spec)
       if (hasTarget) {
-        const processData = await this.requester.makeAuthenticatedRequest({
-          url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
-          method: 'POST',
-          body: process_input,
-        })
+        const processData = await this.requester.makeParentAuthenticatedRequest(
+          {
+            url: `${envs.FLOWBUILD_SERVER_URL}/workflows/name/${workflow_name}/start`,
+            method: 'POST',
+            body: process_input,
+            parentProcessId: `${trigger_process_id}`,
+          }
+        )
         console.info(
           `[PROCESS CREATION RESPONSE] | ${JSON.stringify(processData)}`
         )
@@ -227,6 +250,7 @@ class EventManager {
           definition: topic,
           trigger_process_id,
           target_processes: responses.map((response) => response.process_id),
+          category: 'start',
         })
       }
     }
@@ -241,6 +265,7 @@ class EventManager {
         definition: topic,
         trigger_process_id,
         target_processes: [target_process_id],
+        category: 'continue',
       })
     }
   }
