@@ -8,6 +8,8 @@ export type BaseMessage = {
 }
 
 export type StartProcessMessage = {
+  target_process_id?: string
+  trigger_process_id?: string
   workflow_name: string
   workflow_version: number
   process_input: LooseObject
