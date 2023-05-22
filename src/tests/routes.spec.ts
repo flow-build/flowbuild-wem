@@ -13,6 +13,9 @@ const readRelationsByTrigger = jest.fn(async () => {
 const readRelationsByTarget = jest.fn(async () => {
   return
 })
+const processTree = jest.fn(async () => {
+  return
+})
 jest.mock('@controllers', () => {
   return {
     tps: (_fastify: FastifyInstance, _stream: StreamInterface) => {
@@ -24,6 +27,7 @@ jest.mock('@controllers', () => {
       return {
         readRelationsByTrigger,
         readRelationsByTarget,
+        processTree,
       }
     },
   }
@@ -83,4 +87,11 @@ it('should call readRelationsByTarget', async () => {
   )
 
   expect(readRelationsByTarget).toHaveBeenCalledTimes(1)
+})
+it('should call readRelationsByTarget', async () => {
+  await fetch(`http://0.0.0.0:${PORT}/relations/process_tree/<process_id>`, {
+    method: 'get',
+  })
+
+  expect(processTree).toHaveBeenCalledTimes(1)
 })
