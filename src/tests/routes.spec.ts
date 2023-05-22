@@ -7,11 +7,23 @@ import { StreamInterface } from '@/stream'
 const tpsReadMock = jest.fn(async () => {
   return
 })
+const readRelationsByTrigger = jest.fn(async () => {
+  return
+})
+const readRelationsByTarget = jest.fn(async () => {
+  return
+})
 jest.mock('@controllers', () => {
   return {
     tps: (_fastify: FastifyInstance, _stream: StreamInterface) => {
       return {
         read: tpsReadMock,
+      }
+    },
+    ps: (_fastify: FastifyInstance, _stream: StreamInterface) => {
+      return {
+        readRelationsByTrigger,
+        readRelationsByTarget,
       }
     },
   }
@@ -49,4 +61,26 @@ it('should call READ Topics', async () => {
   })
 
   expect(tpsReadMock).toHaveBeenCalledTimes(1)
+})
+
+it('should call readRelationsByTrigger', async () => {
+  await fetch(
+    `http://0.0.0.0:${PORT}/relations/trigger_process/<process_id>/event/<definition>`,
+    {
+      method: 'get',
+    }
+  )
+
+  expect(readRelationsByTrigger).toHaveBeenCalledTimes(1)
+})
+
+it('should call readRelationsByTarget', async () => {
+  await fetch(
+    `http://0.0.0.0:${PORT}/relations/target_process/<process_id>/event/<definition>`,
+    {
+      method: 'get',
+    }
+  )
+
+  expect(readRelationsByTarget).toHaveBeenCalledTimes(1)
 })

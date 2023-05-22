@@ -18,4 +18,4 @@ async function router(
   })
 }
 
-export { router }
+export { router as topicsRouter }

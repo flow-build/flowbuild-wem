@@ -22,6 +22,7 @@ export const swagger = async (fastify: FastifyInstance) => {
       tags: [
         { name: 'Health', description: 'Health Check' },
         { name: 'Topics', description: 'Flowbuild WEM available topics' },
+        { name: 'Relations', description: 'Trigger Target relations' },
       ],
       definitions: {
         StartInput: {

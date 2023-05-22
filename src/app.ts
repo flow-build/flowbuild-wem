@@ -2,7 +2,7 @@ import Fastify, { FastifyServerOptions } from 'fastify'
 import fastifyCors from '@fastify/cors'
 import fastifyRedis from '@fastify/redis'
 import { swagger } from './swagger'
-import { router as tps_router } from '@routes'
+import { relationsRouter, topicsRouter } from '@routes'
 import { envs } from './configs/env'
 
 const app = async (opts: FastifyServerOptions) => {
@@ -24,7 +24,8 @@ const app = async (opts: FastifyServerOptions) => {
     return reply.send('OK')
   })
 
-  fastify.register(tps_router, { prefix: '/topics' })
+  fastify.register(topicsRouter, { prefix: '/topics' })
+  fastify.register(relationsRouter, { prefix: '/relations' })
 
   return fastify
 }
