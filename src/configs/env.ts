@@ -33,8 +33,7 @@ const envs = {
   BROKER_KAFKA_MECHANISM: process.env.BROKER_KAFKA_MECHANISM || 'plain',
   BROKER_KAFKA_USERNAME: process.env.BROKER_KAFKA_USERNAME || '',
   BROKER_KAFKA_SECRET: process.env.BROKER_KAFKA_SECRET || '',
-  REDIS_PASSWORD:
-    process.env.REDIS_PASSWORD || 'eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81',
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD || '',
   REDIS_HOST: process.env.REDIS_HOST || 'localhost',
   REDIS_PORT: process.env.REDIS_PORT || '6379',
   REDIS_WEM_EVENTS_DB: process.env.REDIS_WEM_EVENTS_DB || '7',
