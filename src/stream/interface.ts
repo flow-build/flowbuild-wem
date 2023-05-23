@@ -2,7 +2,7 @@ import { Consumer, EachMessagePayload, Producer } from 'kafkajs'
 import { LooseObject } from '@/types'
 import { EventManager } from '@/worker'
 import { log } from '@/utils'
-import { connectKafka, setClient } from '@stream/kafka'
+import { client, connectKafka, setClient } from '@stream/kafka'
 import { flowbuildQueues, setFlowbuildWorkers, setQueues } from './bullmq'
 import { Job } from 'bullmq'
 
@@ -89,6 +89,26 @@ class StreamInterface {
     }
   }
 
+  async shutDown() {
+    await this._consumer?.stop()
+  }
+
+  async readTopics() {
+    if (client) {
+      const admin = client.admin()
+      return await admin.listTopics()
+    }
+  }
+
+  async subscribe(topics: Array<string>) {
+    for (const topic of topics) {
+      await this._consumer?.subscribe({
+        topic: topic,
+        fromBeginning: true,
+      })
+    }
+  }
+
   async setConsumer(orchestrator: EventManager) {
     const kafkaTopics = this._streams['kafka']
     if (kafkaTopics && kafkaTopics.consumesFrom) {
@@ -101,15 +121,6 @@ class StreamInterface {
     // const bullmqTopics = this._streams['bullmq']
     // if (bullmqTopics && bullmqTopics.consumesFrom) {
     // }
-  }
-
-  async subscribe(topics: Array<string>) {
-    for (const topic of topics) {
-      await this._consumer?.subscribe({
-        topic: topic,
-        fromBeginning: true,
-      })
-    }
   }
 
   // Kafka consumer cb

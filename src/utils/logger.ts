@@ -30,7 +30,7 @@ function createLogger(logerLevel: string) {
 }
 
 function log(logMessage: LOG_MESSAGE) {
-  const label = logMessage.label || 'ORCHESTRATOR'
+  const label = logMessage.label || 'WEM'
   const level = logMessage.level || 'info'
   //ToDo LOG_LEVEL
   logger.log({

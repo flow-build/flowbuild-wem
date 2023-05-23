@@ -1,8 +1,10 @@
-import { EachMessagePayload } from 'kafkajs'
+/* eslint-disable @typescript-eslint/no-var-requires*/
 import { EventManager } from '@event-manager'
 import { StreamInterface } from '@/stream'
 import { createLogger } from '@utils'
 import { envs } from '@configs/env'
+
+const { axiosMock } = require('../../.jest/setMocks')
 
 const consumerMock = {
   connect: jest.fn(() => {
@@ -40,26 +42,12 @@ jest.mock('@stream/kafka', () => {
   }
 })
 
-const makeAuthenticatedRequestMock = jest.fn(() => {
-  return
-})
-jest.mock('@event-manager/requester', () => {
-  return {
-    Requester: class Requester {
-      async makeAuthenticatedRequest() {
-        makeAuthenticatedRequestMock()
-        return
-      }
-    },
-  }
-})
-
 let stream: StreamInterface
 let worker: EventManager
 
 beforeAll(async () => {
   createLogger('test')
-  worker = new EventManager({}, {})
+  worker = new EventManager('test-id')
   stream = new StreamInterface(envs.STREAM_CONFIG)
   EventManager.stream = stream
   await stream.connect(worker)
@@ -71,14 +59,9 @@ it('should correctly RUN consumer connection', async () => {
 })
 
 it('should correctly run EventManager', async () => {
-  const eachMessage = stream.eachMessage(worker)
-  eachMessage({
-    topic: 'wem-start-process',
-    partition: 1,
-    message: {
-      value:
-        '{"process_name": "TEST_PROCESS", "process_input": {"TEST": "DATA"} }',
-    },
-  } as unknown as EachMessagePayload)
-  expect(makeAuthenticatedRequestMock).toHaveBeenCalledTimes(1)
+  await worker.runAction('wem.process.start', {
+    workflow_name: 'TEST_TARGET',
+    process_input: { TEST: 'DATA' },
+  })
+  expect(axiosMock).toHaveBeenCalled()
 })

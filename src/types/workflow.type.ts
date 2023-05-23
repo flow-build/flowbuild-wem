@@ -46,7 +46,9 @@ export type WorkflowSchedule = {
 }
 
 export type Workflow = {
+  id: string
   name: string
+  version: number
   description: string
   blueprint_spec: Blueprint
   history_cache?: HistoryCache
