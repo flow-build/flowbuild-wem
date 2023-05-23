@@ -32,7 +32,7 @@ const setClient = () => {
 
   producer = client.producer()
   consumer = client.consumer({
-    groupId: 'wem-consumer-group',
+    groupId: 'flowbuild-wem-consumer-group',
   })
 }
 
