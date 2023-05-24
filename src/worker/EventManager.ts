@@ -155,7 +155,7 @@ class EventManager {
       )) as Array<LooseObject>
       rootId =
         parentResolvedTargets?.find((target) => target.category === 'start')
-          ?.rootId || trigger_process_id
+          ?.root_id || trigger_process_id
     }
 
     await this.redis.set(
