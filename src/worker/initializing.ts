@@ -1,13 +1,37 @@
 import { envs } from '@/configs/env'
 import { Requester } from './requester'
 import { Workflow, Node, LooseObject } from '@/types'
+import { promisify } from 'util'
+
+const sleep = promisify(setTimeout)
+
+async function fetchWorkflows(
+  requester: Requester,
+  retry = 0
+): Promise<Array<Workflow>> {
+  try {
+    return await requester.makeAuthenticatedRequest({
+      url: `${envs.FLOWBUILD_SERVER_URL}/workflows`,
+    })
+  } catch (e) {
+    if (retry > envs.INITIALIZING_RETRIES_AMOUNT) {
+      console.error(
+        'Could not fetch workflows from Flowbuild. Will keep trying'
+      )
+      throw Error(
+        'Could not initialize WEM. Please check Flowbuild Server status.'
+      )
+    }
+    console.info('\nCould not fetch workflows from Flowbuild. Will keep trying')
+    await sleep(envs.INITIALIZING_RETRIES_DELAY_SECONDS * 1000)
+    return await fetchWorkflows(requester, retry + 1)
+  }
+}
 
 async function fetchTargetTopics(wemId: string) {
   const requester = new Requester(wemId)
 
-  const workflows = await requester.makeAuthenticatedRequest({
-    url: `${envs.FLOWBUILD_SERVER_URL}/workflows`,
-  })
+  const workflows = await fetchWorkflows(requester)
 
   const detailedWorkflows = await Promise.all(
     workflows.map((workflow: Workflow) => {

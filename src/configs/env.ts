@@ -39,11 +39,13 @@ const envs = {
   REDIS_WEM_EVENTS_DB: process.env.REDIS_WEM_EVENTS_DB || '7',
   SERVER_HOST: process.env.SERVER_HOST || 'locahost',
   SERVER_PORT: parseInt(process.env.SERVER_PORT || '3333', 10),
+  INITIALIZING_RETRIES_AMOUNT: parseInt(
+    process.env.INITIALIZING_RETRIES_AMOUNT || '100',
+    10
+  ),
+  INITIALIZING_RETRIES_DELAY_SECONDS: parseInt(
+    process.env.INITIALIZING_RETRIES_DELAY_SECONDS || '5',
+    10
+  ),
 }
 export { envs }
-
-// BROKER_HOST: process.env.BROKER_HOST || 'pkc-n00kk.us-east-1.aws.confluent.cloud',
-// BROKER_PORT: process.env.BROKER_PORT || '9092',
-// BROKER_KAFKA_MECHANISM: process.env.BROKER_KAFKA_MECHANISM || 'plain',
-// BROKER_KAFKA_USERNAME: process.env.BROKER_KAFKA_USERNAME || 'KGA66PXM43TN6OEC',
-// BROKER_KAFKA_SECRET: process.env.BROKER_KAFKA_SECRET || 'PCIEbvgp0d5JzxwLZadSaDILTDrcflLUUX4Yiq02m5dk203cQiBO9DgyOZ/OHcFi',
