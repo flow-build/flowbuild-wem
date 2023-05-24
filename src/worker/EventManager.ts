@@ -141,7 +141,7 @@ class EventManager {
     )) as LooseObject
 
     if (resolvedTriggers) {
-      rootId = resolvedTriggers.rootId
+      rootId = resolvedTriggers.root_id
       targets = resolvedTriggers.targets.concat(resolvedTargets)
     }
 
