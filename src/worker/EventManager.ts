@@ -132,13 +132,32 @@ class EventManager {
         process_id,
       }
     })
+
     let targets = resolvedTargets
-    const registeredData = (await this.redis.get(
+    let rootId = ''
+
+    const resolvedTriggers = (await this.redis.get(
       `resolved_triggers:${trigger_process_id}:${definition}`
     )) as LooseObject
-    if (registeredData) {
-      targets = registeredData.targets.concat(resolvedTargets)
+
+    if (resolvedTriggers) {
+      rootId = resolvedTriggers.rootId
+      targets = resolvedTriggers.targets.concat(resolvedTargets)
     }
+
+    if (!rootId) {
+      const parentResolvedTargetsKeys = (await this.redis.keys(
+        `resolved_targets:${trigger_process_id}:*`
+      )) as Array<string>
+
+      const parentResolvedTargets = (await this.redis.mget(
+        parentResolvedTargetsKeys
+      )) as Array<LooseObject>
+      rootId =
+        parentResolvedTargets?.find((target) => target.category === 'start')
+          ?.rootId || trigger_process_id
+    }
+
     await this.redis.set(
       `resolved_triggers:${trigger_process_id}:${definition}`,
       JSON.stringify({
@@ -146,7 +165,9 @@ class EventManager {
         definition,
         targets,
         category,
-      })
+        root_id: rootId,
+      }),
+      { EX: envs.TRIGGER_TARGET_RELATIONS_TTL }
     )
 
     await Promise.all(
@@ -157,7 +178,9 @@ class EventManager {
             trigger_process_id,
             definition,
             category,
-          })
+            root_id: rootId,
+          }),
+          { EX: envs.TRIGGER_TARGET_RELATIONS_TTL }
         )
       })
     )
