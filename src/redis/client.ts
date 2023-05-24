@@ -42,10 +42,27 @@ class RedisClient {
     await this._client.select(parseInt(envs.REDIS_WEM_EVENTS_DB, 10))
   }
 
+  async keys(pattern: string): Promise<Array<string>> {
+    return (await this._client.keys(pattern)) as Array<string>
+  }
+
   async get(key: string): Promise<LooseObject | string> {
     const data = (await this._client.get(key)) as string
     try {
       return JSON.parse(data)
+    } catch (e) {
+      return data
+    }
+  }
+
+  async mget(keys: Array<string>): Promise<Array<LooseObject | string>> {
+    const data = (await Promise.all(
+      keys.map((key: string) => this._client.get(key))
+    )) as Array<string>
+    try {
+      return data
+        .filter((d: string | null) => d)
+        .map((d: string) => JSON.parse(d))
     } catch (e) {
       return data
     }

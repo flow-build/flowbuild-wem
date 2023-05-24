@@ -1,6 +1,9 @@
 import { FastifyRedis } from '@fastify/redis'
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import { buildTreeFromProcessId } from './utils/process_tree_builder'
+import {
+  buildTreeFromProcessId,
+  fetchRootId,
+} from './utils/process_tree_builder'
 
 const controllers = (fastify: FastifyInstance) => {
   const { redis } = fastify as { redis: FastifyRedis }
@@ -41,7 +44,8 @@ const controllers = (fastify: FastifyInstance) => {
         process_id: string
       }
 
-      const response = await buildTreeFromProcessId(redis, process_id)
+      const rootId = await fetchRootId(redis, process_id)
+      const response = await buildTreeFromProcessId(redis, rootId)
 
       return reply.code(200).send(response)
     },
