@@ -74,6 +74,21 @@ const buildFromTarget = async (
   return { process_id, wasStartedBy: [] }
 }
 
+export const fetchRootId = async (redis: FastifyRedis, process_id: string) => {
+  const targetKeys = await redis.keys(`resolved_targets:${process_id}:*`)
+  if (targetKeys.length) {
+    const targets = (await redis.mget(targetKeys)) as Array<string>
+    if (targets.length) {
+      return (
+        targets
+          .map((t: string) => JSON.parse(t as string))
+          .find((t) => t.category === 'start')?.root_id || process_id
+      )
+    }
+  }
+  return process_id
+}
+
 export const buildTreeFromProcessId = async (
   redis: FastifyRedis,
   process_id: string
